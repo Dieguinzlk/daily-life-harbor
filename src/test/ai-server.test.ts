@@ -104,6 +104,16 @@ import { errorText as _errorText } from "@/lib/ai.server";
 import { describe as _d, expect as _e, it as _it } from "vitest";
 
 _d("Groq error helpers", () => {
+  _it("reports unavailable model or missing model access without suggesting a retry", () => {
+    const error = new APICallError({
+      message: "The model does not exist or you do not have access to it.",
+      url: "https://api.groq.com/openai/v1/chat/completions",
+      requestBodyValues: {},
+      statusCode: 404,
+    });
+    _e(_errorText(error)).toContain("não existe ou que sua chave não tem acesso");
+    _e(_errorText(error)).not.toMatch(/tente de novo/i);
+  });
   _it("maps 503 and timeouts to retry-later messages", () => {
     const err = new APICallError({
       message: "x",
