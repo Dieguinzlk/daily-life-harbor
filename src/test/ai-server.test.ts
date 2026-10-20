@@ -60,7 +60,8 @@ describe("Groq server configuration", () => {
     );
     expect(response.status).toBe(403);
   });
-  it("requires GROQ_API_KEY even when a legacy Gemini key exists", async () => {
+  it("requires the Groq key even when a legacy Gemini key exists", async () => {
+    vi.stubEnv("GERENCIADOR_DE_VIDA_API_KEY", "");
     vi.stubEnv("GROQ_API_KEY", "");
     vi.stubEnv("GEMINI_API_KEY", "test-only-legacy-key");
     const response = await handleChat(request());
@@ -70,7 +71,7 @@ describe("Groq server configuration", () => {
   });
 
   it("uses the Groq Chat Completions base URL with the server key", async () => {
-    vi.stubEnv("GROQ_API_KEY", "test-only-not-a-credential");
+    vi.stubEnv("GERENCIADOR_DE_VIDA_API_KEY", "test-only-not-a-credential");
     mocks.createOpenAI.mockReturnValue({ chat: mocks.chat });
     mocks.streamText.mockReturnValue({ toUIMessageStreamResponse: () => new Response("test") });
     const response = await handleChat(request());
@@ -81,8 +82,25 @@ describe("Groq server configuration", () => {
     });
     expect(response.status).toBe(200);
   });
+  it("prefers the renamed key over the legacy GROQ_API_KEY", async () => {
+    vi.stubEnv("GERENCIADOR_DE_VIDA_API_KEY", "test-only-new-name");
+    vi.stubEnv("GROQ_API_KEY", "test-only-old-name");
+    mocks.createOpenAI.mockReturnValue({ chat: mocks.chat });
+    mocks.streamText.mockReturnValue({ toUIMessageStreamResponse: () => new Response("test") });
+    const response = await handleChat(request());
+    expect(mocks.createOpenAI.mock.calls[0]?.[0]).toMatchObject({ apiKey: "test-only-new-name" });
+    expect(response.status).toBe(200);
+  });
+  it("still reads the legacy GROQ_API_KEY when the renamed key is absent", async () => {
+    vi.stubEnv("GROQ_API_KEY", "test-only-old-name");
+    mocks.createOpenAI.mockReturnValue({ chat: mocks.chat });
+    mocks.streamText.mockReturnValue({ toUIMessageStreamResponse: () => new Response("test") });
+    const response = await handleChat(request());
+    expect(mocks.createOpenAI.mock.calls[0]?.[0]).toMatchObject({ apiKey: "test-only-old-name" });
+    expect(response.status).toBe(200);
+  });
   it("uses exactly llama-3.3-70b-versatile regardless of legacy Gemini model configuration", async () => {
-    vi.stubEnv("GROQ_API_KEY", "test-only-not-a-credential");
+    vi.stubEnv("GERENCIADOR_DE_VIDA_API_KEY", "test-only-not-a-credential");
     vi.stubEnv("GEMINI_MODEL", "test-model-override");
     mocks.createOpenAI.mockReturnValue({ chat: mocks.chat });
     mocks.streamText.mockReturnValue({ toUIMessageStreamResponse: () => new Response("test") });
