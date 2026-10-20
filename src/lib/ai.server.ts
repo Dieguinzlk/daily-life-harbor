@@ -188,13 +188,14 @@ export async function handleChat(request: Request): Promise<Response> {
       { status: 400 },
     );
   }
-  const apiKey = process.env["GROQ_API_KEY"];
+  const apiKey =
+    process.env["GERENCIADOR_DE_VIDA_API_KEY"] ?? process.env["GROQ_API_KEY"];
   if (!apiKey)
     return Response.json(
       {
         code: "AI_NOT_CONFIGURED",
         error:
-          "A Groq ainda não está configurada neste ambiente. Configure GROQ_API_KEY no servidor e tente novamente.",
+          "A Groq ainda não está configurada neste ambiente. Configure GERENCIADOR_DE_VIDA_API_KEY no servidor e tente novamente.",
       },
       { status: 409 },
     );
