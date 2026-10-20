@@ -1,10 +1,10 @@
-
-
-import { createAPIFileRoute } from "@tanstack/react-start/api";
+import { createFileRoute } from "@tanstack/react-router";
 import { handleChat } from "@/lib/ai.server";
 
-export const Route = createAPIFileRoute("/api/chat")({
-  POST: async ({ request }) => {
-    return handleChat(request);
+export const Route = createFileRoute("/api/chat")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => handleChat(request),
+    },
   },
 });

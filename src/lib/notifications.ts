@@ -36,12 +36,12 @@ export async function sendLocalNotification(title: string, options?: Notificatio
   }
 
   const reg = await registerServiceWorker();
-  const defaultOptions: NotificationOptions = {
+  const defaultOptions = {
     icon: "/icon-192.png",
     badge: "/icon-192.png",
     vibrate: [100, 50, 100],
     ...options,
-  };
+  } as NotificationOptions;
 
   if (reg && reg.showNotification) {
     await reg.showNotification(title, defaultOptions);
