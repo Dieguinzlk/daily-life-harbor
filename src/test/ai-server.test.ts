@@ -90,9 +90,11 @@ describe("Groq server configuration", () => {
     expect(mocks.chat).toHaveBeenCalledWith("llama-3.3-70b-versatile");
     const options = mocks.streamText.mock.calls[0]?.[0];
     expect(options.instructions).toContain("português do Brasil");
-    expect(Object.values(options.tools).every((entry: unknown) =>
-      typeof entry === "object" && entry !== null && !("execute" in entry),
-    )).toBe(true);
+    expect(
+      Object.values(options.tools).every(
+        (entry: unknown) => typeof entry === "object" && entry !== null && !("execute" in entry),
+      ),
+    ).toBe(true);
     expect(response.status).toBe(200);
   });
 });
@@ -103,9 +105,20 @@ import { describe as _d, expect as _e, it as _it } from "vitest";
 
 _d("Groq error helpers", () => {
   _it("maps 503 and timeouts to retry-later messages", () => {
-    const err = new APICallError({ message: "x", url: "u", requestBodyValues: {}, statusCode: 503 });
+    const err = new APICallError({
+      message: "x",
+      url: "u",
+      requestBodyValues: {},
+      statusCode: 503,
+    });
     _e(_errorText(err)).toMatch(/indisponível/);
-    const retry = new (require("ai").RetryError)({ message: "r", reason: "maxRetriesExceeded", errors: [new APICallError({ message: "q", url: "u", requestBodyValues: {}, statusCode: 429 })] });
+    const retry = new (require("ai").RetryError)({
+      message: "r",
+      reason: "maxRetriesExceeded",
+      errors: [
+        new APICallError({ message: "q", url: "u", requestBodyValues: {}, statusCode: 429 }),
+      ],
+    });
     _e(_errorText(retry)).toMatch(/Limite de uso/);
     _e(_errorText(new DOMException("t", "TimeoutError"))).toMatch(/demorou/);
   });

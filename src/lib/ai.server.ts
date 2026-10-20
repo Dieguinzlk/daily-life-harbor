@@ -122,8 +122,7 @@ export function errorText(error: unknown): string {
     return "A Groq recusou o acesso. Verifique a chave e as permissões no servidor.";
   if (status === 400)
     return "A Groq não aceitou a solicitação. Verifique a configuração no servidor.";
-  if (status === 404)
-    return "O modelo llama-3.3-70b-versatile não está disponível na Groq.";
+  if (status === 404) return "O modelo llama-3.3-70b-versatile não está disponível na Groq.";
   return "Não foi possível falar com a IA agora. Verifique a conexão e tente de novo.";
 }
 
