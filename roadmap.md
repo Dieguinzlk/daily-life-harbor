@@ -5,7 +5,8 @@
 - [x] Auditar configurações, dependências, rotas e erros de carregamento.
 - [x] Corrigir problemas comprovados de dados, backups e validação da IA.
 - [x] Validar os fluxos principais e apresentar relatório com limitações reais.
-- [ ] Verificar inferência real Gemini e deployment Vercel: depende da chave e acesso à configuração externa.
+- [ ] Migrar o Assistente para Groq llama-3.3-70b-versatile, mantendo streaming e confirmação; validar com GROQ_API_KEY.
+- [ ] Verificar deployment Vercel: depende de acesso à configuração externa.
 - [x] Reinspecionar o projeto e executar diagnóstico não destrutivo da nova auditoria.
 - [x] Aplicar correções localizadas aprovadas, sem trocar o modelo ou alterar armazenamento e visual.
 - [x] Validar regressões de pagamento, backup, leitura dos módulos e atualizar relatório com limites reais.
