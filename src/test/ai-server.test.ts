@@ -91,6 +91,7 @@ describe("Groq server configuration", () => {
     expect(response.status).toBe(200);
   });
   it("still reads the legacy GROQ_API_KEY when the renamed key is absent", async () => {
+    vi.stubEnv("GERENCIADOR_DE_VIDA_API_KEY", "");
     vi.stubEnv("GROQ_API_KEY", "test-only-old-name");
     mocks.createOpenAI.mockReturnValue({ chat: mocks.chat });
     mocks.streamText.mockReturnValue({ toUIMessageStreamResponse: () => new Response("test") });
