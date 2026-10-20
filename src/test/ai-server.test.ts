@@ -99,7 +99,7 @@ describe("Groq server configuration", () => {
   });
 });
 
-import { APICallError } from "ai";
+import { APICallError, RetryError } from "ai";
 import { errorText as _errorText } from "@/lib/ai.server";
 import { describe as _d, expect as _e, it as _it } from "vitest";
 
@@ -122,7 +122,7 @@ _d("Groq error helpers", () => {
       statusCode: 503,
     });
     _e(_errorText(err)).toMatch(/indisponível/);
-    const retry = new (require("ai").RetryError)({
+    const retry = new RetryError({
       message: "r",
       reason: "maxRetriesExceeded",
       errors: [
