@@ -100,7 +100,7 @@ describe("Groq server configuration", () => {
   });
   it("uses exactly openai/gpt-oss-120b regardless of legacy model configuration", async () => {
     vi.stubEnv("GERENCIADOR_DE_VIDA_API_KEY", "test-only-not-a-credential");
-    vi.stubEnv("GEMINI_MODEL", "test-model-override");
+    vi.stubEnv("GROQ_MODEL", "test-model-override");
     mocks.createOpenAI.mockReturnValue({ chat: mocks.chat });
     mocks.streamText.mockReturnValue({ toUIMessageStreamResponse: () => new Response("test") });
     const response = await handleChat(request());
