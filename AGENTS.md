@@ -15,3 +15,4 @@
 - The /metas route reuses the finance goal view and storage; keep workouts available and settings accessible from the Home header to avoid duplicate modules.
 - Validate backups atomically before replacing local data; currentAmount is the canonical accumulated goal balance, with no inferred contribution history or schema migration.
 - Debt payments use the pure src/lib/debt-payment.ts operation inside update to validate against the same current state that receives the expense, preventing stale-balance inconsistencies.
+- Server routes use createFileRoute with server.handlers (the installed TanStack Start has no @tanstack/react-start/api / createAPIFileRoute); the old API breaks the build.
