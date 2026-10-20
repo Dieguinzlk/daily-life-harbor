@@ -13,6 +13,7 @@ const empty: AppData = {
   workoutGoal: 3,
   financeGoals: [],
   healthGoals: [],
+  business: { sales: [], expenses: [], scheduled: [] },
 };
 beforeEach(() => {
   vi.resetModules();

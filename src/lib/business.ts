@@ -9,13 +9,13 @@ export type Sale = {
   product: string;
   quantity: number;
   unitPrice: number;
-  unitCost?: number;
+  unitCost?: number | undefined;
   discount: number;
   date: string;
   paymentMethod: string;
   payments: Movement[];
-  expectedDate?: string;
-  notes?: string;
+  expectedDate?: string | undefined;
+  notes?: string | undefined;
 };
 
 export type BizExpense = {
@@ -24,11 +24,11 @@ export type BizExpense = {
   category: string;
   amount: number;
   date: string;
-  paymentMethod?: string;
+  paymentMethod?: string | undefined;
   paid: boolean;
-  paidDate?: string;
-  dueDate?: string;
-  notes?: string;
+  paidDate?: string | undefined;
+  dueDate?: string | undefined;
+  notes?: string | undefined;
 };
 
 export type ScheduledPayment = {
@@ -39,7 +39,7 @@ export type ScheduledPayment = {
   amount: number;
   dueDate: string;
   payments: Movement[];
-  notes?: string;
+  notes?: string | undefined;
 };
 
 export type BusinessData = {
@@ -105,7 +105,7 @@ export type Period = { start: string; end: string };
 const inP = (d: string | undefined, p: Period) => !!d && d >= p.start && d <= p.end;
 
 export function monthPeriod(ym: string): Period {
-  const [y, m] = ym.split("-").map(Number);
+  const [y = 0, m = 1] = ym.split("-").map(Number);
   const last = new Date(y, m, 0).getDate();
   return { start: `${ym}-01`, end: `${ym}-${String(last).padStart(2, "0")}` };
 }

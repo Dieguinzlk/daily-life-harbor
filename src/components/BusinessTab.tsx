@@ -46,7 +46,7 @@ function setBiz(fn: (b: BusinessData) => BusinessData) {
 }
 
 function prevMonth(ym: string) {
-  const [y, m] = ym.split("-").map(Number);
+  const [y = 0, m = 1] = ym.split("-").map(Number);
   const d = new Date(y, m - 2, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -95,7 +95,7 @@ function PeriodPicker({ value, onChange }: { value: Period; onChange: (p: Period
   );
 }
 
-function Stat({ label, value, tone, hint }: { label: string; value: number; tone?: string; hint?: string }) {
+function Stat({ label, value, tone, hint }: { label: string; value: number; tone?: string; hint?: string | undefined }) {
   return (
     <Card className="p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -228,11 +228,11 @@ function PayDialog({ title, open, max, onClose, onPay }: {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[92vw] rounded-2xl sm:max-w-md">
         <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
-        <form className="space-y-3" onSubmit={(e) => {
+        <form className="space-y-3" onSubmit={(e): void => {
           e.preventDefault();
           const f = new FormData(e.currentTarget);
           const amount = roundMoney(money(String(f.get("amount"))));
-          if (!(amount > 0)) return toast.error("Informe um valor válido.");
+          if (!(amount > 0)) return void toast.error("Informe um valor válido.");
           onPay(amount, String(f.get("date")) || today());
         }}>
           <p className="text-sm text-muted-foreground">Saldo restante: {brl(max)}</p>
@@ -330,7 +330,7 @@ function SaleDialog({ sale, onClose }: { sale: Sale | null; onClose: () => void 
   const costN = cost.trim() ? money(cost) : undefined;
   const profit = costN !== undefined && !Number.isNaN(costN) ? roundMoney(total - preview.quantity * costN) : null;
 
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  function submit(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const customer = String(f.get("customer")).trim();
@@ -339,14 +339,14 @@ function SaleDialog({ sale, onClose }: { sale: Sale | null; onClose: () => void 
     const unitPrice = roundMoney(money(price));
     const discount = disc.trim() ? roundMoney(money(disc)) : 0;
     const unitCost = cost.trim() ? roundMoney(money(cost)) : undefined;
-    if (!customer || !product || !date) return toast.error("Preencha cliente, produto e data.");
+    if (!customer || !product || !date) return void toast.error("Preencha cliente, produto e data.");
     if (!(q > 0) || !(unitPrice >= 0) || !(discount >= 0) || (unitCost !== undefined && !(unitCost >= 0)))
-      return toast.error("Confira quantidade, valores e desconto.");
+      return void toast.error("Confira quantidade, valores e desconto.");
     const t = saleTotal({ quantity: q, unitPrice, discount });
-    if (!(t > 0)) return toast.error("O total da venda precisa ser maior que zero.");
+    if (!(t > 0)) return void toast.error("O total da venda precisa ser maior que zero.");
     let payments = sale?.payments ?? [];
     const want = status === "pago" ? t : status === "pendente" ? 0 : roundMoney(money(partial));
-    if (status === "parcial" && !(want > 0 && want < t)) return toast.error("Valor recebido parcial deve ser maior que zero e menor que o total.");
+    if (status === "parcial" && !(want > 0 && want < t)) return void toast.error("Valor recebido parcial deve ser maior que zero e menor que o total.");
     if (roundMoney(paidOf({ payments })) !== want)
       payments = want > 0 ? [{ date: payments[0]?.date ?? date, amount: want }] : [];
     const next: Sale = {
@@ -500,17 +500,17 @@ function ScheduleDialog({ item, onClose }: { item: ScheduledPayment | null; onCl
   const [kind, setKind] = useState<ScheduledPayment["kind"]>(item?.kind ?? "receber");
   const initial = item ? statusOf(item.amount, item) : "pendente";
   const [status, setStatus] = useState(initial);
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  function submit(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const party = String(f.get("party")).trim();
     const what = String(f.get("item")).trim();
     const amount = roundMoney(money(String(f.get("amount"))));
     const dueDate = String(f.get("due"));
-    if (!party || !what || !dueDate || !(amount > 0)) return toast.error("Preencha todos os campos obrigatórios.");
+    if (!party || !what || !dueDate || !(amount > 0)) return void toast.error("Preencha todos os campos obrigatórios.");
     let payments = item?.payments ?? [];
     const paid = roundMoney(paidOf({ payments }));
-    if (paid > amount) return toast.error("O valor não pode ser menor do que o já quitado.");
+    if (paid > amount) return void toast.error("O valor não pode ser menor do que o já quitado.");
     if (status === "pago" && paid < amount)
       payments = [...payments, { date: today(), amount: roundMoney(amount - paid) }];
     if (status === "pendente") payments = [];
@@ -592,7 +592,7 @@ function ExpensesSection({ expenses }: { expenses: BizExpense[] }) {
                   onClick={() => setBiz((b) => ({
                     ...b,
                     expenses: b.expenses.map((x) => x.id === e.id
-                      ? (x.paid ? { ...x, paid: false, paidDate: undefined } : { ...x, paid: true, paidDate: today() })
+                      ? (x.paid ? (({ paidDate: _p, ...rest }) => ({ ...rest, paid: false }))(x) : { ...x, paid: true, paidDate: today() })
                       : x),
                   }))}
                   className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 ${e.paid ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"}`}>
@@ -623,13 +623,13 @@ function ExpensesSection({ expenses }: { expenses: BizExpense[] }) {
 
 function ExpenseDialog({ expense, onClose }: { expense: BizExpense | null; onClose: () => void }) {
   const [paid, setPaid] = useState(expense?.paid ?? true);
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  function submit(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const description = String(f.get("description")).trim();
     const amount = roundMoney(money(String(f.get("amount"))));
     const date = String(f.get("date"));
-    if (!description || !date || !(amount > 0)) return toast.error("Preencha descrição, valor e data.");
+    if (!description || !date || !(amount > 0)) return void toast.error("Preencha descrição, valor e data.");
     const due = String(f.get("due") ?? "");
     const notes = String(f.get("notes")).trim();
     const method = String(f.get("method"));
