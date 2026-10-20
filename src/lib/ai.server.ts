@@ -108,7 +108,8 @@ export const tools = {
 
 export function errorText(error: unknown): string {
   const status = APICallError.isInstance(error) ? error.statusCode : undefined;
-  if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError"))
+  const name = (error as { name?: unknown } | null)?.name;
+  if (name === "TimeoutError" || name === "AbortError")
     return "A IA demorou demais para responder. Tente de novo em instantes.";
   if (status === 429)
     return "Limite de uso atingido no momento. Aguarde alguns instantes e tente de novo.";
@@ -123,12 +124,12 @@ export function errorText(error: unknown): string {
   return "Não foi possível falar com a IA agora. Verifique a conexão e tente de novo.";
 }
 
-export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
+export const DEFAULT_GEMINI_MODEL = "models/gemini-3.8-flash";
 
-/** Normaliza o nome do modelo: aceita "models/x" ou "x"; vazio usa o padrão. */
+/** Aceita "models/x" ou "x"; vazio ou inválido usa o padrão. */
 export function resolveModel(value: string | undefined): string {
-  const name = (value ?? "").trim().replace(/^models\//, "");
-  return /^[a-z0-9][a-z0-9.\-]*$/i.test(name) ? name : DEFAULT_GEMINI_MODEL;
+  const name = (value ?? "").trim();
+  return /^(models\/)?[a-z0-9][a-z0-9.\-]*$/i.test(name) ? name : DEFAULT_GEMINI_MODEL;
 }
 
 export async function handleChat(request: Request): Promise<Response> {

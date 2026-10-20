@@ -94,10 +94,10 @@ import { errorText as _errorText, resolveModel as _resolveModel } from "@/lib/ai
 import { describe as _d, expect as _e, it as _it } from "vitest";
 
 _d("gemini config helpers", () => {
-  _it("strips models/ prefix and falls back on empty or invalid names", () => {
-    _e(_resolveModel("models/gemini-x-flash")).toBe("gemini-x-flash");
-    _e(_resolveModel("")).toBe("gemini-3.8-flash");
-    _e(_resolveModel("bad name!")).toBe("gemini-3.8-flash");
+  _it("keeps valid names and falls back on empty or invalid names", () => {
+    _e(_resolveModel("models/gemini-x-flash")).toBe("models/gemini-x-flash");
+    _e(_resolveModel("")).toBe("models/gemini-3.8-flash");
+    _e(_resolveModel("bad name!")).toBe("models/gemini-3.8-flash");
   });
   _it("maps 503 and timeouts to retry-later messages", () => {
     const err = new APICallError({ message: "x", url: "u", requestBodyValues: {}, statusCode: 503 });
