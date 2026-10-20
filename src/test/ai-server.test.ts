@@ -102,6 +102,8 @@ _d("gemini config helpers", () => {
   _it("maps 503 and timeouts to retry-later messages", () => {
     const err = new APICallError({ message: "x", url: "u", requestBodyValues: {}, statusCode: 503 });
     _e(_errorText(err)).toMatch(/indisponível/);
+    const retry = new (require("ai").RetryError)({ message: "r", reason: "maxRetriesExceeded", errors: [new APICallError({ message: "q", url: "u", requestBodyValues: {}, statusCode: 429 })] });
+    _e(_errorText(retry)).toMatch(/Limite de uso/);
     _e(_errorText(new DOMException("t", "TimeoutError"))).toMatch(/demorou/);
   });
 });
