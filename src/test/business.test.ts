@@ -120,3 +120,20 @@ describe("Negócio — armazenamento", () => {
     expect(backupSchema.safeParse({ transactions: [], business: { sales: [{ id: "x" }] } }).success).toBe(false);
   });
 });
+
+import { agendaItems, businessDueOn } from "@/lib/business";
+describe("Negócio — venda pendente nos Agendados", () => {
+  const b: BusinessData = { ...emptyBusiness(), sales: [sale({ expectedDate: "2026-10-22" })] };
+  it("venda pendente com data aparece em Agendados sem duplicar totais", () => {
+    const items = agendaItems(b);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ saleId: "s1", kind: "receber", dueDate: "2026-10-22", amount: 59 });
+    expect(businessMetrics(b, P).toReceive).toBe(59);
+  });
+  it("venda paga ou sem data não aparece; lembrete só no dia previsto", () => {
+    expect(agendaItems({ ...b, sales: [sale()] })).toHaveLength(0);
+    expect(agendaItems({ ...b, sales: [sale({ expectedDate: "2026-10-22", payments: [{ date: "2026-10-22", amount: 59 }] })] })).toHaveLength(0);
+    expect(businessDueOn(b, "2026-10-22")).toHaveLength(1);
+    expect(businessDueOn(b, "2026-10-21")).toHaveLength(0);
+  });
+});
