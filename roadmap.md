@@ -6,7 +6,8 @@
 - [x] Corrigir problemas comprovados de dados, backups e validação da IA.
 - [x] Validar os fluxos principais e apresentar relatório com limitações reais.
 - [x] Migrar o Assistente para Groq llama-3.3-70b-versatile com GROQ_API_KEY, mantendo streaming e confirmação; testes locais aprovados.
-- [ ] Validar resposta e confirmação reais da Groq: teste retornou 404, modelo inexistente ou sem acesso para a chave configurada; depende de acesso ao modelo na Groq.
+- [x] Validar resposta e confirmação reais da Groq: modelo trocado para openai/gpt-oss-120b (a chave não tinha acesso ao llama-3.3-70b-versatile); teste real pediu o cartão de confirmação antes de salvar.
+- [x] Renomear a chave do assistente para GERENCIADOR_DE_VIDA_API_KEY e apagar a chave Gemini sem uso.
 - [ ] Verificar deployment Vercel: depende de acesso à configuração externa.
 - [x] Reinspecionar o projeto e executar diagnóstico não destrutivo da nova auditoria.
 - [x] Aplicar correções localizadas aprovadas, sem trocar o modelo ou alterar armazenamento e visual.

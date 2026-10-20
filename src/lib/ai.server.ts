@@ -189,7 +189,7 @@ export async function handleChat(request: Request): Promise<Response> {
     );
   }
   const apiKey =
-    process.env["GERENCIADOR_DE_VIDA_API_KEY"] ?? process.env["GROQ_API_KEY"];
+    process.env["GERENCIADOR_DE_VIDA_API_KEY"]?.trim() || process.env["GROQ_API_KEY"]?.trim();
   if (!apiKey)
     return Response.json(
       {
