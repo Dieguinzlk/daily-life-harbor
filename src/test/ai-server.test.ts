@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  chat: vi.fn(() => ({ provider: "groq", modelId: "llama-3.3-70b-versatile" })),
+  chat: vi.fn(() => ({ provider: "groq", modelId: "openai/gpt-oss-120b" })),
   createOpenAI: vi.fn(),
   streamText: vi.fn(),
 }));
@@ -60,10 +60,9 @@ describe("Groq server configuration", () => {
     );
     expect(response.status).toBe(403);
   });
-  it("requires the Groq key even when a legacy Gemini key exists", async () => {
+  it("requires the Groq key to be configured", async () => {
     vi.stubEnv("GERENCIADOR_DE_VIDA_API_KEY", "");
     vi.stubEnv("GROQ_API_KEY", "");
-    vi.stubEnv("GEMINI_API_KEY", "test-only-legacy-key");
     const response = await handleChat(request());
     expect(response.status).toBe(409);
     expect(await response.json()).toMatchObject({ code: "AI_NOT_CONFIGURED" });
@@ -99,13 +98,13 @@ describe("Groq server configuration", () => {
     expect(mocks.createOpenAI.mock.calls[0]?.[0]).toMatchObject({ apiKey: "test-only-old-name" });
     expect(response.status).toBe(200);
   });
-  it("uses exactly llama-3.3-70b-versatile regardless of legacy Gemini model configuration", async () => {
+  it("uses exactly openai/gpt-oss-120b regardless of legacy model configuration", async () => {
     vi.stubEnv("GERENCIADOR_DE_VIDA_API_KEY", "test-only-not-a-credential");
     vi.stubEnv("GEMINI_MODEL", "test-model-override");
     mocks.createOpenAI.mockReturnValue({ chat: mocks.chat });
     mocks.streamText.mockReturnValue({ toUIMessageStreamResponse: () => new Response("test") });
     const response = await handleChat(request());
-    expect(mocks.chat).toHaveBeenCalledWith("llama-3.3-70b-versatile");
+    expect(mocks.chat).toHaveBeenCalledWith("openai/gpt-oss-120b");
     const options = mocks.streamText.mock.calls[0]?.[0];
     expect(options.instructions).toContain("português do Brasil");
     expect(
