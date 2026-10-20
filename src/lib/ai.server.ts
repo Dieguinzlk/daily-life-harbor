@@ -106,10 +106,14 @@ export const tools = {
   }),
 };
 
-function errorText(error: unknown): string {
+export function errorText(error: unknown): string {
   const status = APICallError.isInstance(error) ? error.statusCode : undefined;
+  if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError"))
+    return "A IA demorou demais para responder. Tente de novo em instantes.";
   if (status === 429)
     return "Limite de uso atingido no momento. Aguarde alguns instantes e tente de novo.";
+  if (status === 503 || (status !== undefined && status >= 500))
+    return "O Gemini está sobrecarregado ou indisponível agora. Tente de novo em instantes.";
   if (status === 401 || status === 403)
     return "O Gemini recusou o acesso. Verifique a chave e as permissões no servidor.";
   if (status === 400)
@@ -117,6 +121,14 @@ function errorText(error: unknown): string {
   if (status === 404)
     return "O modelo configurado não está disponível no Gemini. Verifique GEMINI_MODEL no ambiente do deploy.";
   return "Não foi possível falar com a IA agora. Verifique a conexão e tente de novo.";
+}
+
+export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
+
+/** Normaliza o nome do modelo: aceita "models/x" ou "x"; vazio usa o padrão. */
+export function resolveModel(value: string | undefined): string {
+  const name = (value ?? "").trim().replace(/^models\//, "");
+  return /^[a-z0-9][a-z0-9.\-]*$/i.test(name) ? name : DEFAULT_GEMINI_MODEL;
 }
 
 export async function handleChat(request: Request): Promise<Response> {
@@ -177,7 +189,7 @@ export async function handleChat(request: Request): Promise<Response> {
       { status: 400 },
     );
   }
-  const apiKey = process.env["GEMINI_API_KEY"];
+  const apiKey = process.env["GEMINI_API_KEY"] || process.env["GOOGLE_GENERATIVE_AI_API_KEY"];
   if (!apiKey)
     return Response.json(
       {
@@ -188,9 +200,7 @@ export async function handleChat(request: Request): Promise<Response> {
       { status: 409 },
     );
   const google = createGoogleGenerativeAI({ apiKey });
-
-  // Atualizado para o modelo correto recomendado
-  const model = process.env["GEMINI_MODEL"] || "models/gemini-3.8-flash";
+  const model = resolveModel(process.env["GEMINI_MODEL"]);
 
   const messages = body.messages;
 
@@ -217,7 +227,9 @@ export async function handleChat(request: Request): Promise<Response> {
       instructions,
       messages: await convertToModelMessages(messages),
       tools,
-      abortSignal: request.signal,
+      // Cancela se o usuário parar/fechar ou se o Gemini passar de 90s.
+      abortSignal: AbortSignal.any([request.signal, AbortSignal.timeout(90_000)]),
+      maxRetries: 1,
     });
 
     return result.toUIMessageStreamResponse({ originalMessages: messages, onError: errorText });
