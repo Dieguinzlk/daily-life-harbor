@@ -1,6 +1,7 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import {
   APICallError,
+  RetryError,
   convertToModelMessages,
   streamText,
   tool,
@@ -107,6 +108,8 @@ export const tools = {
 };
 
 export function errorText(error: unknown): string {
+  // Com novas tentativas, o SDK embrulha o erro real em RetryError.lastError.
+  if (RetryError.isInstance(error)) error = error.lastError;
   const status = APICallError.isInstance(error) ? error.statusCode : undefined;
   const name = (error as { name?: unknown } | null)?.name;
   if (name === "TimeoutError" || name === "AbortError")
