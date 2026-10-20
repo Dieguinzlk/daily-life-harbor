@@ -1,3 +1,4 @@
+import { businessMetrics, monthPeriod } from "@/lib/business";
 import {
   brl,
   fmtDate,
@@ -273,6 +274,12 @@ export function buildSnapshot(d: AppData) {
       .slice(0, 10)
       .map((l) => ({ planName: l.planName, date: l.date })),
     metaTreinosSemana: d.workoutGoal,
+    // Business: aggregates only (no customer names) for the current month.
+    negocioMes: (({ totalSales, receivedOfSales, pendingOfSales, expenses, grossProfit, netProfit, salesCount, toReceive, toPay, balance }) => ({
+      totalVendas: totalSales, recebidoVendas: receivedOfSales, vendasPendentes: pendingOfSales,
+      gastos: expenses, lucroBrutoEstimado: grossProfit, lucroLiquidoEstimado: netProfit,
+      quantidadeVendas: salesCount, aReceber: toReceive, aPagar: toPay, saldoComercial: balance,
+    }))(businessMetrics(d.business ?? { sales: [], expenses: [], scheduled: [] }, monthPeriod(month))),
     metasFinanceiras: d.financeGoals.map(({ name, targetAmount, currentAmount, deadline }) => ({
       name,
       targetAmount,
