@@ -43,11 +43,10 @@ export type ScheduledPayment = {
 };
 
 export type BusinessData = {
-  sales: BizSaleList;
+  sales: Sale[];
   expenses: BizExpense[];
   scheduled: ScheduledPayment[];
 };
-type BizSaleList = Sale[];
 
 export const emptyBusiness = (): BusinessData => ({ sales: [], expenses: [], scheduled: [] });
 
