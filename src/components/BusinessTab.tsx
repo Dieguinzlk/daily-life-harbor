@@ -6,11 +6,14 @@ import { Card } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { money, roundMoney } from "@/lib/data-validation";
+import { ensureReminderFor } from "@/lib/notifications";
 import { brl, fmtDate, today, uid, update, useData } from "@/lib/store";
 import {
   BIZ_CATEGORIES,
   PAYMENT_METHODS,
   addPayment,
+  agendaItems,
+  type AgendaItem,
   businessMetrics,
   dueGroup,
   expensesByCategory,
@@ -43,6 +46,13 @@ function setBiz(fn: (b: BusinessData) => BusinessData) {
     toast.error(e instanceof Error ? e.message : "Não foi possível salvar.");
     return false;
   }
+}
+
+async function remind(date: string | undefined) {
+  if (!date || date < today()) return;
+  const granted = await ensureReminderFor(date, today());
+  if (granted) toast.message(`Lembrete ativado para ${fmtDate(date)}: você será avisado ao abrir o app nesse dia.`);
+  else toast.message("Ative as notificações (sino no topo) para receber o lembrete.");
 }
 
 function prevMonth(ym: string) {
@@ -211,7 +221,7 @@ export function BusinessTab() {
       )}
 
       {section === "vendas" && <SalesSection sales={b.sales} />}
-      {section === "agenda" && <ScheduleSection items={b.scheduled} />}
+      {section === "agenda" && <ScheduleSection items={agendaItems(b)} />}
       {section === "gastos" && <ExpensesSection expenses={b.expenses} />}
     </div>
   );
@@ -362,7 +372,14 @@ function SaleDialog({ sale, onClose }: { sale: Sale | null; onClose: () => void 
       ...b,
       sales: sale ? b.sales.map((x) => (x.id === sale.id ? next : x)) : [...b.sales, next],
     }));
-    if (ok) { toast.success(sale ? "Venda atualizada." : "Venda registrada."); onClose(); }
+    if (ok) {
+      const linked = status !== "pago" && next.expectedDate;
+      toast.success(
+        (sale ? "Venda atualizada." : "Venda registrada.") + (linked ? " Também aparece em Agendados." : ""),
+      );
+      if (linked) void remind(next.expectedDate);
+      onClose();
+    }
   }
 
   return (
@@ -421,9 +438,9 @@ const GROUPS: [DueGroup, string][] = [
   ["quitados", "Pagos ou recebidos"],
 ];
 
-function ScheduleSection({ items }: { items: ScheduledPayment[] }) {
+function ScheduleSection({ items }: { items: AgendaItem[] }) {
   const [editing, setEditing] = useState<ScheduledPayment | null | "new">(null);
-  const [paying, setPaying] = useState<ScheduledPayment | null>(null);
+  const [paying, setPaying] = useState<AgendaItem | null>(null);
   const t = today();
   const sorted = [...items].sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   return (
@@ -468,10 +485,16 @@ function ScheduleSection({ items }: { items: ScheduledPayment[] }) {
                           <Check className="h-4 w-4" /> Marcar {done.toLowerCase()}
                         </button>
                       )}
-                      <button type="button" aria-label="Editar" className="text-muted-foreground" onClick={() => setEditing(s)}>
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <Del onConfirm={() => setBiz((b) => ({ ...b, scheduled: b.scheduled.filter((x) => x.id !== s.id) }))} />
+                      {s.saleId ? (
+                        <span className="text-[11px] text-muted-foreground">Da venda · edite em Vendas</span>
+                      ) : (
+                        <>
+                          <button type="button" aria-label="Editar" className="text-muted-foreground" onClick={() => setEditing(s)}>
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <Del onConfirm={() => setBiz((b) => ({ ...b, scheduled: b.scheduled.filter((x) => x.id !== s.id) }))} />
+                        </>
+                      )}
                     </div>
                   </li>
                 );
@@ -485,10 +508,11 @@ function ScheduleSection({ items }: { items: ScheduledPayment[] }) {
         <PayDialog title={paying.kind === "receber" ? "Confirmar recebimento" : "Confirmar pagamento"} open
           max={remaining(paying.amount, paying)} onClose={() => setPaying(null)}
           onPay={(amount, date) => {
-            const ok = setBiz((b) => ({
-              ...b,
-              scheduled: b.scheduled.map((x) => (x.id === paying.id ? addPayment(x, x.amount, amount, date) : x)),
-            }));
+            const ok = setBiz((b) =>
+              paying.saleId
+                ? { ...b, sales: b.sales.map((x) => (x.id === paying.saleId ? addPayment(x, saleTotal(x), amount, date) : x)) }
+                : { ...b, scheduled: b.scheduled.map((x) => (x.id === paying.id ? addPayment(x, x.amount, amount, date) : x)) },
+            );
             if (ok) setPaying(null);
           }} />
       )}
@@ -523,7 +547,10 @@ function ScheduleDialog({ item, onClose }: { item: ScheduledPayment | null; onCl
       ...b,
       scheduled: item ? b.scheduled.map((x) => (x.id === item.id ? next : x)) : [...b.scheduled, next],
     }));
-    if (ok) onClose();
+    if (ok) {
+      if (status !== "pago") void remind(dueDate);
+      onClose();
+    }
   }
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>

@@ -1,4 +1,5 @@
-import { AppData } from "./store";
+import type { AppData } from "./store";
+import { businessDueOn, remaining } from "./business";
 
 // Regista o Service Worker PWA
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
@@ -56,7 +57,16 @@ export function checkAndNotifyDueItems(data: AppData) {
     return;
   }
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  // Negócio: recebimentos e pagamentos pendentes com data para hoje
+  businessDueOn(data.business, todayStr).forEach((item) => {
+    sendLocalNotification(item.kind === "receber" ? "Recebimento pendente hoje" : "Pagamento pendente hoje", {
+      body: `${item.party} · ${item.item} - R$ ${remaining(item.amount, item).toFixed(2)}`,
+      tag: `biz-${item.id}-${todayStr}`,
+    });
+  });
 
   // Notificar contas a pagar que vencem hoje
   const dueBillsToday = data.bills.filter((bill) => !bill.paid && bill.dueDate === todayStr);
@@ -75,4 +85,11 @@ export function checkAndNotifyDueItems(data: AppData) {
       tag: `tasks-${todayStr}`,
     });
   }
+}
+
+/** Called after saving a pending record with a future date: asks permission once so
+ * the existing daily check can alert on that day when the app is opened. */
+export async function ensureReminderFor(dueDate: string | undefined, todayStr: string) {
+  if (!dueDate || dueDate < todayStr) return false;
+  return (await requestNotificationPermission()) === "granted";
 }

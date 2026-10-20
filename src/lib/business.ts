@@ -171,3 +171,28 @@ export function dueGroup(s: ScheduledPayment, todayStr: string): DueGroup {
   if (s.dueDate === todayStr) return "hoje";
   return "proximos";
 }
+
+export type AgendaItem = ScheduledPayment & { saleId?: string };
+
+/** Pending sales with an expected date appear in the agenda as linked (virtual)
+ * receivables. They are not stored twice, so totals are never double counted. */
+export function agendaItems(b: BusinessData): AgendaItem[] {
+  const fromSales: AgendaItem[] = b.sales
+    .filter((s) => s.expectedDate && remaining(saleTotal(s), s) > 0)
+    .map((s) => ({
+      id: `sale-${s.id}`,
+      saleId: s.id,
+      kind: "receber",
+      party: s.customer,
+      item: s.product,
+      amount: saleTotal(s),
+      dueDate: s.expectedDate!,
+      payments: s.payments,
+    }));
+  return [...b.scheduled, ...fromSales];
+}
+
+/** Business items whose payment date is the given day and still have balance open. */
+export function businessDueOn(b: BusinessData, day: string): AgendaItem[] {
+  return agendaItems(b).filter((i) => i.dueDate === day && statusOf(i.amount, i) !== "pago");
+}
