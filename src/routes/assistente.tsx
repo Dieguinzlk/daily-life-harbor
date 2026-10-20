@@ -121,7 +121,7 @@ function Assistente() {
   return (
     <Page
       title="Assistente"
-      subtitle="Gemini · em português"
+      subtitle="Groq · em português"
       action={
         messages.length > 0 ? (
           <button

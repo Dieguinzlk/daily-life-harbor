@@ -232,7 +232,7 @@ function Index() {
           </Link>
         </Button>
       </section>
-      <section className="premium-card assistant-card mb-5 p-4" aria-label="Assistente Gemini">
+      <section className="premium-card assistant-card mb-5 p-4" aria-label="Assistente Groq">
         <div className="grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-2xl bg-neon text-neon-foreground">
             <Sparkles className="h-5 w-5" />
@@ -240,11 +240,11 @@ function Index() {
           <div>
             <h2 className="text-sm font-semibold">Um passo à frente.</h2>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Seu assistente pessoal · Gemini
+              Seu assistente pessoal · Groq
             </p>
           </div>
           <Button asChild variant="ghost" size="icon" className="rounded-full">
-            <Link to="/assistente" aria-label="Conversar com Gemini">
+            <Link to="/assistente" aria-label="Conversar com Groq">
               <ArrowUpRight />
             </Link>
           </Button>

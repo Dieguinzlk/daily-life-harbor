@@ -1,4 +1,4 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
 import {
   APICallError,
   RetryError,
@@ -117,23 +117,18 @@ export function errorText(error: unknown): string {
   if (status === 429)
     return "Limite de uso atingido no momento. Aguarde alguns instantes e tente de novo.";
   if (status === 503 || (status !== undefined && status >= 500))
-    return "O Gemini está sobrecarregado ou indisponível agora. Tente de novo em instantes.";
+    return "A Groq está sobrecarregada ou indisponível agora. Tente de novo em instantes.";
   if (status === 401 || status === 403)
-    return "O Gemini recusou o acesso. Verifique a chave e as permissões no servidor.";
+    return "A Groq recusou o acesso. Verifique a chave e as permissões no servidor.";
   if (status === 400)
-    return "O Gemini não aceitou a solicitação. Verifique o modelo configurado no servidor.";
+    return "A Groq não aceitou a solicitação. Verifique a configuração no servidor.";
   if (status === 404)
-    return "O modelo configurado não está disponível no Gemini. Verifique GEMINI_MODEL no ambiente do deploy.";
+    return "A Groq informou que o modelo llama-3.3-70b-versatile não existe ou que sua chave não tem acesso a ele. Verifique o acesso ao modelo no console da Groq.";
   return "Não foi possível falar com a IA agora. Verifique a conexão e tente de novo.";
 }
 
-export const DEFAULT_GEMINI_MODEL = "models/gemini-3.8-flash";
-
-/** Aceita "models/x" ou "x"; vazio ou inválido usa o padrão. */
-export function resolveModel(value: string | undefined): string {
-  const name = (value ?? "").trim();
-  return /^(models\/)?[a-z0-9][a-z0-9.\-]*$/i.test(name) ? name : DEFAULT_GEMINI_MODEL;
-}
+export const GROQ_MODEL = "llama-3.3-70b-versatile";
+export const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 
 export async function handleChat(request: Request): Promise<Response> {
   const origin = request.headers.get("origin");
@@ -193,18 +188,17 @@ export async function handleChat(request: Request): Promise<Response> {
       { status: 400 },
     );
   }
-  const apiKey = process.env["GEMINI_API_KEY"] || process.env["GOOGLE_GENERATIVE_AI_API_KEY"];
+  const apiKey = process.env["GROQ_API_KEY"];
   if (!apiKey)
     return Response.json(
       {
         code: "AI_NOT_CONFIGURED",
         error:
-          "O Gemini ainda não está configurado neste ambiente. Configure GEMINI_API_KEY no servidor e tente novamente.",
+          "A Groq ainda não está configurada neste ambiente. Configure GROQ_API_KEY no servidor e tente novamente.",
       },
       { status: 409 },
     );
-  const google = createGoogleGenerativeAI({ apiKey });
-  const model = resolveModel(process.env["GEMINI_MODEL"]);
+  const groq = createOpenAI({ apiKey, baseURL: GROQ_BASE_URL, name: "groq" });
 
   const messages = body.messages;
 
@@ -227,11 +221,11 @@ export async function handleChat(request: Request): Promise<Response> {
 
   try {
     const result = streamText({
-      model: google(model),
+      model: groq.chat(GROQ_MODEL),
       instructions,
       messages: await convertToModelMessages(messages),
       tools,
-      // Cancela se o usuário parar/fechar ou se o Gemini passar de 90s.
+      // Cancela se o usuário parar/fechar ou se a Groq passar de 90s.
       abortSignal: AbortSignal.any([request.signal, AbortSignal.timeout(90_000)]),
       maxRetries: 1,
     });

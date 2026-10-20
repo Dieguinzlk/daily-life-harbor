@@ -10,7 +10,7 @@
 <!-- LOVABLE:END -->
 
 - App data lives in localStorage via src/lib/store.ts (single JSON blob, versioned) — user wants on-device storage with JSON backup/restore, no backend.
-- AI assistant: server route /api/chat (src/lib/ai.server.ts) streams Gemini using createGoogleGenerativeAI with GEMINI_API_KEY read inside handleChat; tools have no server execute and the browser confirms each action before applying it via src/lib/ai-actions.ts — keeps credentials server-only, data on-device, and every change user-approved.
+- AI assistant: server route /api/chat (src/lib/ai.server.ts) streams external Groq Chat Completions using the installed createOpenAI adapter's explicit .chat method and GROQ_API_KEY read inside handleChat; tools have no server execute and the browser confirms each action before applying it via src/lib/ai-actions.ts — keeps the existing UI stream protocol, credentials server-only, data on-device, and every change user-approved.
 - Home-only derived metrics and immutable habit toggling live in src/lib/home-metrics.ts; persist through the existing update function to keep backup data compatible.
 - The /metas route reuses the finance goal view and storage; keep workouts available and settings accessible from the Home header to avoid duplicate modules.
 - Validate backups atomically before replacing local data; currentAmount is the canonical accumulated goal balance, with no inferred contribution history or schema migration.
