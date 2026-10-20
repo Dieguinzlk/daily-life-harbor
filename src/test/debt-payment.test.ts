@@ -14,6 +14,7 @@ const data: AppData = {
   workoutGoal: 3,
   financeGoals: [],
   healthGoals: [],
+  business: { sales: [], expenses: [], scheduled: [] },
 };
 const transaction = { id: "payment", date: "2026-10-19" };
 

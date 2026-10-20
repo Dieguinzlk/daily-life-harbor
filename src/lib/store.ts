@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { backupSchema } from "@/lib/data-validation";
 import { toast } from "sonner";
+import { emptyBusiness, type BusinessData } from "@/lib/business";
 
 export type Transaction = {
   id: string;
@@ -103,6 +104,7 @@ export type AppData = {
   workoutGoal: number;
   financeGoals: FinanceGoal[];
   healthGoals: HealthGoal[];
+  business: BusinessData;
 };
 
 const KEY = "gerenciador-de-vida:v1";
@@ -119,6 +121,7 @@ const empty: AppData = {
   workoutGoal: 3,
   financeGoals: [],
   healthGoals: [],
+  business: emptyBusiness(),
 };
 
 function normalizeData(saved: Partial<AppData> | null | undefined): AppData {
@@ -136,6 +139,11 @@ function normalizeData(saved: Partial<AppData> | null | undefined): AppData {
     workoutGoal: typeof saved?.workoutGoal === "number" ? saved.workoutGoal : 3,
     financeGoals: Array.isArray(saved?.financeGoals) ? saved.financeGoals : [],
     healthGoals: Array.isArray(saved?.healthGoals) ? saved.healthGoals : [],
+    business: {
+      sales: Array.isArray(saved?.business?.sales) ? saved.business.sales : [],
+      expenses: Array.isArray(saved?.business?.expenses) ? saved.business.expenses : [],
+      scheduled: Array.isArray(saved?.business?.scheduled) ? saved.business.scheduled : [],
+    },
   };
 }
 

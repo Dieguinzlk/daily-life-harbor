@@ -25,6 +25,66 @@ const financeGoal = z
     notes: z.string().optional(),
   })
   .passthrough();
+const optText = z.string().optional();
+const movement = z.object({ date: validDate, amount: positive }).passthrough();
+const business = z
+  .object({
+    sales: z
+      .array(
+        z
+          .object({
+            id,
+            customer: text,
+            product: text,
+            quantity: positive,
+            unitPrice: nonneg,
+            unitCost: nonneg.optional(),
+            discount: nonneg,
+            date: validDate,
+            paymentMethod: z.string(),
+            payments: z.array(movement),
+            expectedDate: validDate.optional(),
+            notes: optText,
+          })
+          .passthrough(),
+      )
+      .optional(),
+    expenses: z
+      .array(
+        z
+          .object({
+            id,
+            description: text,
+            category: text,
+            amount: positive,
+            date: validDate,
+            paymentMethod: optText,
+            paid: z.boolean(),
+            paidDate: validDate.optional(),
+            dueDate: validDate.optional(),
+            notes: optText,
+          })
+          .passthrough(),
+      )
+      .optional(),
+    scheduled: z
+      .array(
+        z
+          .object({
+            id,
+            kind: z.enum(["receber", "pagar"]),
+            party: text,
+            item: text,
+            amount: positive,
+            dueDate: validDate,
+            payments: z.array(movement),
+            notes: optText,
+          })
+          .passthrough(),
+      )
+      .optional(),
+  })
+  .passthrough();
 export const backupSchema = z
   .object({
     version: z.literal(1).optional(),
@@ -113,6 +173,7 @@ export const backupSchema = z
           .passthrough(),
       )
       .optional(),
+    business: business.optional(),
   })
   .passthrough();
 

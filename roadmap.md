@@ -14,3 +14,4 @@
 - [x] Validar regressões de pagamento, backup, leitura dos módulos e atualizar relatório com limites reais.
 - [ ] Verificar vínculo e branch oficiais do GitHub e proteção compartilhada da Vercel: depende de acesso externo.
 - [ ] Reavaliar segurança com análise profunda recente: depende de nova análise na aba Segurança.
+- [x] Aba Negócio em Finanças (vendas, agendados, gastos, painel, gráfico)

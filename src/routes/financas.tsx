@@ -6,6 +6,7 @@ import { money, roundMoney } from "@/lib/data-validation";
 import { recordDebtPayment } from "@/lib/debt-payment";
 import type { FinanceGoal } from "@/lib/store";
 import { Page, Card } from "@/components/AppShell";
+import { BusinessTab } from "@/components/BusinessTab";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useData, update, uid, today, brl, fmtDate } from "@/lib/store";
 
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/financas")({
   component: Financas,
 });
 
-type Tab = "lancamentos" | "contas" | "dividas" | "metas";
+type Tab = "lancamentos" | "contas" | "dividas" | "metas" | "negocio";
 const CATS = [
   "Alimentação",
   "Moradia",
@@ -72,6 +73,7 @@ export function Financas({
     ["contas", "Contas"],
     ["dividas", "Dívidas"],
     ["metas", "Metas"],
+    ["negocio", "Negócio"],
   ];
 
   return (
@@ -79,7 +81,7 @@ export function Financas({
       title={goalsPage ? "Metas" : "Finanças"}
       subtitle="Seu dinheiro sob controle"
       action={
-        tab !== "metas" ? (
+        tab === "negocio" ? undefined : tab !== "metas" ? (
           <button
             onClick={() => setOpen(true)}
             className="shadow-glow flex h-11 items-center gap-1 rounded-xl bg-primary px-4 font-semibold text-primary-foreground"
@@ -97,7 +99,7 @@ export function Financas({
       }
     >
       {!goalsPage && (
-        <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1 sm:grid-cols-4">
+        <div className="mb-4 grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1 sm:grid-cols-5">
           {tabs.map(([k, l]) => (
             <button
               key={k}
@@ -274,9 +276,10 @@ export function Financas({
       )}
 
       {tab === "metas" && <FinanceGoals />}
+      {tab === "negocio" && <BusinessTab />}
 
       <NewDialog
-        open={open && tab !== "metas"}
+        open={open && tab !== "metas" && tab !== "negocio"}
         onOpenChange={setOpen}
         tab={tab === "contas" || tab === "dividas" ? tab : "lancamentos"}
       />
