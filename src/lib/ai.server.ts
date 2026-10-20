@@ -123,11 +123,11 @@ export function errorText(error: unknown): string {
   if (status === 400)
     return "A Groq não aceitou a solicitação. Verifique a configuração no servidor.";
   if (status === 404)
-    return "A Groq informou que o modelo llama-3.3-70b-versatile não existe ou que sua chave não tem acesso a ele. Verifique o acesso ao modelo no console da Groq.";
+    return `A Groq informou que o modelo ${GROQ_MODEL} não existe ou que sua chave não tem acesso a ele. Verifique o acesso ao modelo no console da Groq.`;
   return "Não foi possível falar com a IA agora. Verifique a conexão e tente de novo.";
 }
 
-export const GROQ_MODEL = "llama-3.3-70b-versatile";
+export const GROQ_MODEL = "openai/gpt-oss-120b";
 export const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 
 export async function handleChat(request: Request): Promise<Response> {
