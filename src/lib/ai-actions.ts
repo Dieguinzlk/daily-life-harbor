@@ -244,6 +244,136 @@ export function prepareAction(name: string, input: Input, data: AppData): Prepar
         ),
       };
     }
+    case "add_business_sale": {
+      const sale: Sale = {
+        id: uid(),
+        customer: str(input.customer, "Cliente"),
+        product: str(input.product, "Produto"),
+        quantity: pos(input.quantity, "Quantidade"),
+        unitPrice: pos(input.unitPrice, "Valor unitário"),
+        ...(input.unitCost == null ? {} : { unitCost: nonneg(input.unitCost, "Custo unitário") }),
+        discount: input.discount == null ? 0 : nonneg(input.discount, "Desconto"),
+        date: dateOr(input.date),
+        paymentMethod:
+          PAYMENT_METHODS.find((m) => m === input.paymentMethod) ?? "Outro",
+        payments: [],
+        ...(input.expectedDate == null
+          ? {}
+          : { expectedDate: isDate(input.expectedDate) ? input.expectedDate : bad("Data prevista inválida") }),
+        ...(typeof input.notes === "string" && input.notes.trim()
+          ? { notes: input.notes.trim().slice(0, 500) }
+          : {}),
+      };
+      const total = saleTotal(sale);
+      if (!(total > 0)) bad("O total da venda deve ser maior que zero");
+      return {
+        summary: `Registrar venda de "${sale.product}" para ${sale.customer}: ${sale.quantity} × ${brl(sale.unitPrice)}${sale.discount ? ` − ${brl(sale.discount)}` : ""} = ${brl(total)} (recebimento pendente)`,
+        apply: () => (
+          update((d) => ({ ...d, business: { ...d.business, sales: [...d.business.sales, sale] } })),
+          "Venda registrada com recebimento pendente"
+        ),
+      };
+    }
+    case "add_business_expense": {
+      const category =
+        BIZ_CATEGORIES.find((cat) => cat === input.category) ?? "Outros gastos";
+      const expense = {
+        id: uid(),
+        description: str(input.description, "Descrição"),
+        category,
+        amount: pos(input.amount, "Valor"),
+        date: dateOr(input.date),
+        paid: input.paid === true,
+        ...(input.dueDate == null
+          ? {}
+          : { dueDate: isDate(input.dueDate) ? input.dueDate : bad("Vencimento inválido") }),
+        ...(typeof input.notes === "string" && input.notes.trim()
+          ? { notes: input.notes.trim().slice(0, 500) }
+          : {}),
+      };
+      if (expense.paid && input.paid !== true) bad("Informe se o gasto já foi pago");
+      return {
+        summary: `Registrar gasto do negócio "${expense.description}" de ${brl(expense.amount)} (${category})${expense.paid ? " — já pago" : " — pendente"}`,
+        apply: () => (
+          update((d) => ({
+            ...d,
+            business: { ...d.business, expenses: [...d.business.expenses, expense] },
+          })),
+          "Gasto do negócio registrado"
+        ),
+      };
+    }
+    case "add_scheduled_payment": {
+      const kind = input.kind === "receber" || input.kind === "pagar" ? input.kind : bad("Tipo inválido");
+      const item = {
+        id: uid(),
+        kind,
+        party: str(input.party, "Pessoa/empresa"),
+        item: str(input.item, "Descrição"),
+        amount: pos(input.amount, "Valor"),
+        dueDate: isDate(input.dueDate) ? input.dueDate : bad("Data prevista inválida"),
+        payments: [],
+        ...(typeof input.notes === "string" && input.notes.trim()
+          ? { notes: input.notes.trim().slice(0, 500) }
+          : {}),
+      };
+      return {
+        summary: `Agendar ${kind === "receber" ? "recebimento" : "pagamento"} de ${brl(item.amount)} — ${item.party} (${item.item}), previsto para ${fmtDate(item.dueDate)}. Não entra no caixa antes da confirmação.`,
+        apply: () => (
+          update((d) => ({
+            ...d,
+            business: { ...d.business, scheduled: [...d.business.scheduled, item] },
+          })),
+          "Agendamento registrado"
+        ),
+      };
+    }
+    case "register_sale_payment": {
+      const sale = data.business.sales.find((s) => s.id === input.saleId) ?? bad("Venda não encontrada");
+      const amount = pos(input.amount, "Valor");
+      const payDate = dateOr(input.date);
+      const open = remaining(saleTotal(sale), sale);
+      if (amount > open) bad(`O valor excede o saldo restante de ${brl(open)}`);
+      return {
+        summary: `Registrar recebimento de ${brl(amount)} na venda de "${sale.product}" (${sale.customer}), saldo restante ${brl(open)}`,
+        apply: () => (
+          update((d) => ({
+            ...d,
+            business: {
+              ...d.business,
+              sales: d.business.sales.map((s) =>
+                s.id === sale.id ? addPayment(s, saleTotal(s), amount, payDate) : s,
+              ),
+            },
+          })),
+          amount >= open ? "Venda quitada" : "Recebimento parcial registrado"
+        ),
+      };
+    }
+    case "register_scheduled_payment": {
+      const sched =
+        data.business.scheduled.find((s) => s.id === input.scheduledId) ??
+        bad("Agendamento não encontrado");
+      const amount = pos(input.amount, "Valor");
+      const payDate = dateOr(input.date);
+      const open = remaining(sched.amount, sched);
+      if (amount > open) bad(`O valor excede o saldo restante de ${brl(open)}`);
+      return {
+        summary: `Registrar ${sched.kind === "receber" ? "recebimento" : "pagamento"} de ${brl(amount)} — ${sched.party} (${sched.item}), saldo restante ${brl(open)}`,
+        apply: () => (
+          update((d) => ({
+            ...d,
+            business: {
+              ...d.business,
+              scheduled: d.business.scheduled.map((s) =>
+                s.id === sched.id ? addPayment(s, s.amount, amount, payDate) : s,
+              ),
+            },
+          })),
+          amount >= open ? "Agendamento quitado" : "Pagamento parcial registrado"
+        ),
+      };
+    }
     default:
       bad("Ação desconhecida");
   }
