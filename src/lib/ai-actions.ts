@@ -8,7 +8,6 @@ import {
   remaining,
   saleTotal,
   statusOf,
-  type BusinessData,
   type Sale,
 } from "@/lib/business";
 import {
