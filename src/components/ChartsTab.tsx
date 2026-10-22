@@ -53,7 +53,7 @@ function MonthPicker({ value, onChange }: { value: Period; onChange: (p: Period)
   );
 }
 
-function Stat({ label, value, tone, hint }: { label: string; value: string; tone?: string; hint?: string }) {
+function Stat({ label, value, tone, hint }: { label: string; value: string; tone?: string; hint?: string | undefined }) {
   return (
     <Card className="p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
