@@ -105,6 +105,69 @@ export const tools = {
     inputSchema: z.object({ planId: z.string(), date, notes: z.string().nullable() }),
     outputSchema: out,
   }),
+  add_business_sale: tool({
+    description:
+      "Registrar uma venda do negócio. O total é calculado como quantidade × valor unitário − desconto. Pagamentos/recebimentos são lançados depois com register_sale_payment.",
+    inputSchema: z.object({
+      customer: z.string().describe("Nome do comprador"),
+      product: z.string().describe("Produto ou serviço"),
+      quantity: z.number().describe("Quantidade, maior que zero"),
+      unitPrice: z.number().describe("Valor unitário em reais"),
+      unitCost: z.number().nullable().describe("Custo unitário em reais ou null se desconhecido"),
+      discount: z.number().nullable().describe("Desconto total em reais ou null"),
+      date,
+      paymentMethod: z.string().nullable().describe("Pix, Dinheiro, Cartão etc., ou null"),
+      expectedDate: z.string().nullable().describe("Data prevista de recebimento AAAA-MM-DD ou null"),
+      notes: z.string().nullable(),
+    }),
+    outputSchema: out,
+  }),
+  add_business_expense: tool({
+    description: "Registrar um gasto do negócio (nunca usar para despesas pessoais)",
+    inputSchema: z.object({
+      description: z.string(),
+      category: z
+        .enum(["Mercadorias e produtos", "Transporte e entregas", "Marketing", "Taxas e tarifas", "Outros gastos"]),
+      amount: z.number().describe("Valor positivo em reais"),
+      date,
+      paid: z.boolean().describe("true se já foi pago"),
+      dueDate: z.string().nullable().describe("Vencimento AAAA-MM-DD ou null"),
+      notes: z.string().nullable(),
+    }),
+    outputSchema: out,
+  }),
+  add_scheduled_payment: tool({
+    description: "Agendar um valor a receber ou a pagar do negócio",
+    inputSchema: z.object({
+      kind: z.enum(["receber", "pagar"]),
+      party: z.string().describe("Pessoa, cliente ou empresa"),
+      item: z.string().describe("O que foi comprado, vendido ou contratado"),
+      amount: z.number().describe("Valor positivo em reais"),
+      dueDate: z.string().describe("Data prevista AAAA-MM-DD"),
+      notes: z.string().nullable(),
+    }),
+    outputSchema: out,
+  }),
+  register_sale_payment: tool({
+    description:
+      "Registrar um recebimento (total ou parcial) de uma venda existente do negócio (precisa do id da venda dos dados compartilhados)",
+    inputSchema: z.object({
+      saleId: z.string(),
+      amount: z.number().describe("Valor recebido em reais, sem exceder o saldo restante"),
+      date,
+    }),
+    outputSchema: out,
+  }),
+  register_scheduled_payment: tool({
+    description:
+      "Registrar um pagamento/recebimento (total ou parcial) de um item agendado existente (precisa do id dos dados compartilhados)",
+    inputSchema: z.object({
+      scheduledId: z.string(),
+      amount: z.number().describe("Valor em reais, sem exceder o saldo restante"),
+      date,
+    }),
+    outputSchema: out,
+  }),
 };
 
 export function errorText(error: unknown): string {
@@ -211,7 +274,8 @@ export async function handleChat(request: Request): Promise<Response> {
 
   const instructions = [
     "Você é o assistente do app Gerenciador de Vida. Responda sempre em português do Brasil, de forma curta e prática.",
-    "Ajude com rotina, tarefas, finanças (valores em BRL), hábitos, metas e treinos.",
+    "Ajude com rotina, tarefas, finanças pessoais (valores em BRL), negócio (vendas, gastos e pagamentos agendados), hábitos, metas e treinos.",
+    "Para o negócio: consulte negocioVendas, negocioAgendados e negocioGastos dos dados compartilhados. Novas vendas nascem com recebimento pendente; registre recebimentos/pagamentos com register_sale_payment ou register_scheduled_payment, sem exceder o saldo restante. Não confunda gastos do negócio com despesas pessoais.",
     "Quando o usuário pedir para criar/registrar/alterar algo, use as ferramentas. Cada ação é confirmada pelo usuário no aparelho antes de ser salva; não diga que salvou antes de receber o resultado.",
     "Se faltar uma informação essencial (ex.: valor de uma despesa), pergunte antes de chamar a ferramenta.",
     `Hoje é ${today}. Use datas no formato AAAA-MM-DD.`,
