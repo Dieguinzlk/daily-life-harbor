@@ -101,7 +101,7 @@ export function Financas({
       }
     >
       {!goalsPage && (
-        <div className="mb-4 grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1 sm:grid-cols-5">
+        <div className="mb-4 grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1 sm:grid-cols-6">
           {tabs.map(([k, l]) => (
             <button
               key={k}
