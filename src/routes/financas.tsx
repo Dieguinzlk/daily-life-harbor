@@ -7,6 +7,7 @@ import { recordDebtPayment } from "@/lib/debt-payment";
 import type { FinanceGoal } from "@/lib/store";
 import { Page, Card } from "@/components/AppShell";
 import { BusinessTab } from "@/components/BusinessTab";
+import { ChartsTab } from "@/components/ChartsTab";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useData, update, uid, today, brl, fmtDate } from "@/lib/store";
 
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/financas")({
   component: Financas,
 });
 
-type Tab = "lancamentos" | "contas" | "dividas" | "metas" | "negocio";
+type Tab = "lancamentos" | "contas" | "dividas" | "metas" | "negocio" | "graficos";
 const CATS = [
   "Alimentação",
   "Moradia",
@@ -74,6 +75,7 @@ export function Financas({
     ["dividas", "Dívidas"],
     ["metas", "Metas"],
     ["negocio", "Negócio"],
+    ["graficos", "Gráficos"],
   ];
 
   return (
@@ -81,7 +83,7 @@ export function Financas({
       title={goalsPage ? "Metas" : "Finanças"}
       subtitle="Seu dinheiro sob controle"
       action={
-        tab === "negocio" ? undefined : tab !== "metas" ? (
+        tab === "negocio" || tab === "graficos" ? undefined : tab !== "metas" ? (
           <button
             onClick={() => setOpen(true)}
             className="shadow-glow flex h-11 items-center gap-1 rounded-xl bg-primary px-4 font-semibold text-primary-foreground"
@@ -277,6 +279,7 @@ export function Financas({
 
       {tab === "metas" && <FinanceGoals />}
       {tab === "negocio" && <BusinessTab />}
+      {tab === "graficos" && <ChartsTab />}
 
       <NewDialog
         open={open && tab !== "metas" && tab !== "negocio"}
