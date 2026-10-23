@@ -17,3 +17,4 @@
 - Debt payments use the pure src/lib/debt-payment.ts operation inside update to validate against the same current state that receives the expense, preventing stale-balance inconsistencies.
 - Server routes use createFileRoute with server.handlers (the installed TanStack Start has no @tanstack/react-start/api / createAPIFileRoute); the old API breaks the build.
 - Business (Negócio) data lives in the optional `business` field of the same v1 store; pure calculations in src/lib/business.ts use integer cents and record cash only via dated payments — keeps old backups valid, personal finances separate, and avoids double counting.
+- Daily cone stock stores only the day's initial quantity in `business.stock`; sold/remaining are derived from that day's sales (`soldOn`/`stockStatus`), never stored counters — edits and deletes of sales automatically correct the stock.
