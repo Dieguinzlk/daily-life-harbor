@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   addPayment,
+  assertStockAvailable,
   businessMetrics,
   dueGroup,
   emptyBusiness,
@@ -8,7 +9,9 @@ import {
   monthPeriod,
   saleProfit,
   saleTotal,
+  soldOn,
   statusOf,
+  stockStatus,
   type BusinessData,
   type Sale,
   type ScheduledPayment,
