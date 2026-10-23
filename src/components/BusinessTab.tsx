@@ -432,10 +432,13 @@ function SaleDialog({ sale, onClose }: { sale: Sale | null; onClose: () => void 
       ...(f.get("expected") ? { expectedDate: String(f.get("expected")) } : {}),
       ...(String(f.get("notes")).trim() ? { notes: String(f.get("notes")).trim() } : {}),
     };
-    const ok = setBiz((b) => ({
-      ...b,
-      sales: sale ? b.sales.map((x) => (x.id === sale.id ? next : x)) : [...b.sales, next],
-    }));
+    const ok = setBiz((b) => {
+      if (!sale && date === today()) assertStockAvailable(b, date, q);
+      return {
+        ...b,
+        sales: sale ? b.sales.map((x) => (x.id === sale.id ? next : x)) : [...b.sales, next],
+      };
+    });
     if (ok) {
       const linked = status !== "pago" && next.expectedDate;
       toast.success(
