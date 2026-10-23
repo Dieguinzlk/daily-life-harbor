@@ -42,10 +42,14 @@ export type ScheduledPayment = {
   notes?: string | undefined;
 };
 
+/** Daily cone stock: the initial quantity set for one specific day. */
+export type DailyStock = { date: string; initial: number };
+
 export type BusinessData = {
   sales: Sale[];
   expenses: BizExpense[];
   scheduled: ScheduledPayment[];
+  stock?: DailyStock | undefined;
 };
 
 export const emptyBusiness = (): BusinessData => ({ sales: [], expenses: [], scheduled: [] });

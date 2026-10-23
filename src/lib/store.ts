@@ -143,6 +143,11 @@ function normalizeData(saved: Partial<AppData> | null | undefined): AppData {
       sales: Array.isArray(saved?.business?.sales) ? saved.business.sales : [],
       expenses: Array.isArray(saved?.business?.expenses) ? saved.business.expenses : [],
       scheduled: Array.isArray(saved?.business?.scheduled) ? saved.business.scheduled : [],
+      ...(saved?.business?.stock &&
+        typeof saved.business.stock.date === "string" &&
+        typeof saved.business.stock.initial === "number"
+        ? { stock: saved.business.stock }
+        : {}),
     },
   };
 }
