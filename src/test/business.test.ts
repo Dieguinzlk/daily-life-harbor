@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   addPayment,
+  assertStockAvailable,
   businessMetrics,
   dueGroup,
   emptyBusiness,
@@ -8,7 +9,9 @@ import {
   monthPeriod,
   saleProfit,
   saleTotal,
+  soldOn,
   statusOf,
+  stockStatus,
   type BusinessData,
   type Sale,
   type ScheduledPayment,
@@ -135,5 +138,50 @@ describe("Negócio — venda pendente nos Agendados", () => {
     expect(agendaItems({ ...b, sales: [sale({ expectedDate: "2026-10-22", payments: [{ date: "2026-10-22", amount: 59 }] })] })).toHaveLength(0);
     expect(businessDueOn(b, "2026-10-22")).toHaveLength(1);
     expect(businessDueOn(b, "2026-10-21")).toHaveLength(0);
+  });
+});
+
+describe("Negócio — estoque diário de cones", () => {
+  it("vendidos soma só as quantidades das vendas do dia", () => {
+    const b: BusinessData = {
+      ...emptyBusiness(),
+      stock: { date: "2026-10-23", initial: 50 },
+      sales: [sale({ id: "a", date: "2026-10-23", quantity: 3 }), sale({ id: "b", date: "2026-10-23", quantity: 2 }), sale({ id: "c", date: "2026-10-22", quantity: 9 })],
+    };
+    expect(soldOn(b, "2026-10-23")).toBe(5);
+    const st = stockStatus(b, "2026-10-23")!;
+    expect(st.initial).toBe(50);
+    expect(st.sold).toBe(5);
+    expect(st.remaining).toBe(45);
+  });
+  it("sem estoque definido para o dia, não há indicadores nem bloqueio", () => {
+    const b: BusinessData = { ...emptyBusiness(), stock: { date: "2026-10-22", initial: 50 } };
+    expect(stockStatus(b, "2026-10-23")).toBeNull();
+    expect(() => assertStockAvailable(b, "2026-10-23", 100)).not.toThrow();
+  });
+  it("restante nunca fica negativo e estoque zerado bloqueia novas vendas", () => {
+    const b: BusinessData = {
+      ...emptyBusiness(),
+      stock: { date: "2026-10-23", initial: 2 },
+      sales: [sale({ date: "2026-10-23", quantity: 5 })],
+    };
+    expect(stockStatus(b, "2026-10-23")!.remaining).toBe(0);
+    expect(() => assertStockAvailable(b, "2026-10-23", 1)).toThrow(/esgotado/i);
+  });
+  it("bloqueia venda com quantidade maior que o restante", () => {
+    const b: BusinessData = {
+      ...emptyBusiness(),
+      stock: { date: "2026-10-23", initial: 3 },
+      sales: [sale({ date: "2026-10-23", quantity: 1 })],
+    };
+    expect(() => assertStockAvailable(b, "2026-10-23", 2)).not.toThrow();
+    expect(() => assertStockAvailable(b, "2026-10-23", 3)).toThrow(/insuficiente/i);
+  });
+  it("backup sem estoque continua válido e com estoque preserva o campo", () => {
+    const base = { transactions: [], business: emptyBusiness() };
+    expect(backupSchema.safeParse(base).success).toBe(true);
+    const withStock = { ...base, business: { ...emptyBusiness(), stock: { date: "2026-10-23", initial: 50 } } };
+    const parsed = backupSchema.parse(withStock);
+    expect(parsed.business?.stock?.initial).toBe(50);
   });
 });

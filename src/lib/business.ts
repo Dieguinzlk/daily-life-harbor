@@ -42,10 +42,14 @@ export type ScheduledPayment = {
   notes?: string | undefined;
 };
 
+/** Daily cone stock: the initial quantity set for one specific day. */
+export type DailyStock = { date: string; initial: number };
+
 export type BusinessData = {
   sales: Sale[];
   expenses: BizExpense[];
   scheduled: ScheduledPayment[];
+  stock?: DailyStock | undefined;
 };
 
 export const emptyBusiness = (): BusinessData => ({ sales: [], expenses: [], scheduled: [] });
@@ -195,4 +199,26 @@ export function agendaItems(b: BusinessData): AgendaItem[] {
 /** Business items whose payment date is the given day and still have balance open. */
 export function businessDueOn(b: BusinessData, day: string): AgendaItem[] {
   return agendaItems(b).filter((i) => i.dueDate === day && statusOf(i.amount, i) !== "pago");
+}
+
+/** Units sold on a given day: sum of the quantities of that day's sales.
+ * Computed from the sales themselves, so edits and deletes are never double counted. */
+export function soldOn(b: BusinessData, day: string): number {
+  return b.sales.filter((s) => s.date === day).reduce((sum, s) => sum + s.quantity, 0);
+}
+
+/** Daily stock state for the given day, or null when no initial quantity was set for it. */
+export function stockStatus(b: BusinessData, day: string): { initial: number; sold: number; remaining: number } | null {
+  if (!b.stock || b.stock.date !== day) return null;
+  const sold = soldOn(b, day);
+  return { initial: b.stock.initial, sold, remaining: Math.max(0, b.stock.initial - sold) };
+}
+
+/** Refuses a new sale of `quantity` units on `day` when the day's stock cannot cover it. */
+export function assertStockAvailable(b: BusinessData, day: string, quantity: number): void {
+  const s = stockStatus(b, day);
+  if (!s) return;
+  if (s.remaining <= 0) throw new Error("Estoque esgotado por hoje. Redefina a quantidade inicial para vender mais.");
+  if (quantity > s.remaining)
+    throw new Error(`Estoque insuficiente: restam ${s.remaining} unidade(s) hoje.`);
 }

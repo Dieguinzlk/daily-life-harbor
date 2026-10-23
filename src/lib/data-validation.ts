@@ -83,6 +83,7 @@ const business = z
           .passthrough(),
       )
       .optional(),
+    stock: z.object({ date: validDate, initial: nonneg.int() }).passthrough().optional(),
   })
   .passthrough();
 export const backupSchema = z

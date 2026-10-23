@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { Check, Pencil, Plus, Trash2, HandCoins } from "lucide-react";
+import { Check, Pencil, Plus, Trash2, HandCoins, Package } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,11 @@ import {
   addPayment,
   agendaItems,
   type AgendaItem,
+  assertStockAvailable,
   businessMetrics,
   dueGroup,
   expensesByCategory,
+  stockStatus,
   monthPeriod,
   paidOf,
   remaining,
@@ -124,6 +126,67 @@ function Del({ onConfirm, label = "Excluir este registro?" }: { onConfirm: () =>
   );
 }
 
+/* ---------------- Estoque diário de cones ---------------- */
+
+function StockCard() {
+  const b = useData().business;
+  const day = today();
+  const st = stockStatus(b, day);
+  const [qty, setQty] = useState(st ? String(st.initial) : "");
+  const esgotado = !!st && st.remaining <= 0;
+
+  function save(): void {
+    const n = Math.floor(Number(qty.replace(",", ".")));
+    if (!(n >= 0) || Number.isNaN(n)) return void toast.error("Informe uma quantidade válida.");
+    if (setBiz((bb) => ({ ...bb, stock: { date: day, initial: n } })))
+      toast.success("Estoque do dia salvo.");
+  }
+
+  const items: [string, number | null, string?][] = [
+    ["Estoque inicial", st ? st.initial : null],
+    ["Vendidos", st ? st.sold : null],
+    ["Restantes em estoque", st ? st.remaining : null, esgotado ? "text-destructive" : "text-success"],
+  ];
+  return (
+    <Card className="mb-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 font-semibold">
+          <Package className="h-4 w-4 text-primary" /> Estoque de Cones Hoje
+        </h2>
+        {esgotado && (
+          <span className="rounded-full bg-destructive/15 px-2 py-1 text-xs font-semibold text-destructive">
+            Esgotado por hoje
+          </span>
+        )}
+      </div>
+      <div className="mb-3 flex gap-2">
+        <input
+          inputMode="numeric"
+          aria-label="Quantidade inicial do dia"
+          placeholder="Quantidade inicial do dia (ex: 50)"
+          value={qty}
+          onChange={(e) => setQty(e.target.value)}
+          className={field}
+        />
+        <Button type="button" onClick={save} className="h-12 shrink-0 rounded-xl px-5">Salvar</Button>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {items.map(([label, value, tone]) => (
+          <div key={label} className="rounded-xl bg-secondary p-3 text-center">
+            <p className="text-[11px] text-muted-foreground">{label}</p>
+            <p className={`text-lg font-bold ${tone ?? ""}`}>{value === null ? "—" : value}</p>
+          </div>
+        ))}
+      </div>
+      {!st && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Defina a quantidade inicial para acompanhar as vendas de hoje.
+        </p>
+      )}
+    </Card>
+  );
+}
+
 export function BusinessTab() {
   const data = useData();
   const b = data.business;
@@ -152,6 +215,7 @@ export function BusinessTab() {
 
       {section === "painel" && (
         <>
+          <StockCard />
           <PeriodPicker value={period} onChange={setPeriod} />
           <h3 className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Faturamento</h3>
           <div className="mb-3 grid grid-cols-2 gap-2">
@@ -368,10 +432,13 @@ function SaleDialog({ sale, onClose }: { sale: Sale | null; onClose: () => void 
       ...(f.get("expected") ? { expectedDate: String(f.get("expected")) } : {}),
       ...(String(f.get("notes")).trim() ? { notes: String(f.get("notes")).trim() } : {}),
     };
-    const ok = setBiz((b) => ({
-      ...b,
-      sales: sale ? b.sales.map((x) => (x.id === sale.id ? next : x)) : [...b.sales, next],
-    }));
+    const ok = setBiz((b) => {
+      if (!sale && date === today()) assertStockAvailable(b, date, q);
+      return {
+        ...b,
+        sales: sale ? b.sales.map((x) => (x.id === sale.id ? next : x)) : [...b.sales, next],
+      };
+    });
     if (ok) {
       const linked = status !== "pago" && next.expectedDate;
       toast.success(
