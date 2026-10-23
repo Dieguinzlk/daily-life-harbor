@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { Check, Pencil, Plus, Trash2, HandCoins } from "lucide-react";
+import { Check, Pencil, Plus, Trash2, HandCoins, Package } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,11 @@ import {
   addPayment,
   agendaItems,
   type AgendaItem,
+  assertStockAvailable,
   businessMetrics,
   dueGroup,
   expensesByCategory,
+  stockStatus,
   monthPeriod,
   paidOf,
   remaining,
