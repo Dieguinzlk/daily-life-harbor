@@ -151,7 +151,7 @@ function StockCard() {
     <Card className="mb-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-semibold">
-          <Package className="h-4 w-4 text-primary" /> Estoque de Cones Hoje
+          <Package className="h-4 w-4 text-primary" /> Estoque Hoje
         </h2>
         {esgotado && (
           <span className="rounded-full bg-destructive/15 px-2 py-1 text-xs font-semibold text-destructive">
