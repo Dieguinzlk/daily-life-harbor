@@ -20,3 +20,7 @@
 - [ ] Google, perfis, rotas privadas e dados isolados; preservar backup local legado.
 - [ ] Lembretes individuais pelo WhatsApp; automação somente com integração oficial.
 - [ ] Testar regras, persistência, isolamento e navegação móvel; relatar bloqueios reais.
+- [ ] Auditar ZIP completo e comparar autenticação, planos, pagamentos e permissões com Lovable antes de mudanças estruturais.
+- [ ] Reaproveitar planos existentes; integrar Mercado Pago oficial, checkout, webhook idempotente e histórico seguro.
+- [ ] Proprietário gratuito, VIP administrativo e teste único de sete dias, com autorização no servidor.
+- [ ] Validar pagamentos e permissões; documentar credenciais, conflitos de arquitetura e passos externos pendentes.
